@@ -4,8 +4,10 @@ import re
 
 def phoneFormat(phone_number):
     clean_phone_number = re.sub('[^0-9]+', '', phone_number)
-    formatted_phone_number = re.sub("(\d)(?=(\d{3})+(?!\d))", r"\1-", "%d" % int(clean_phone_number[:-1])) + clean_phone_number[-1]
-    return formatted_phone_number
+    fpn = re.sub("(\d)(?=(\d{3})+(?!\d))", r"\1-", "%d" % int(clean_phone_number[:-1])) + clean_phone_number[-1]
+    if fpn[:2] == '1-' :
+        fpn = fpn[2:]
+    return fpn
 
 csvFileName = sys.argv[1] #weebly export csv taken as argument
 
@@ -37,7 +39,7 @@ with open(csvFileName, 'r') as csvfile:
             prodQty = row['Product Quantity'].strip()
             email = prevRow['Shipping Email'].strip()
             address = prevRow['Shipping Address'].strip()
-            city = prevRow['Shipping City'].strip()
+            city = prevRow['Shipping City'].strip().capitalize()
 
             if(prodId == '29') : #Product id 29 is for Grad Signs
                 print('\"',orderNo,'\",\"',orderDate,'\",\"',prodId,'\",\"',prodQty,'\",\"', fullName,'\",\"' ,email, '\",\"',address,'\",\"', city,'\",\"',phoneNo,'\",\"',notes.strip(),'\"')
