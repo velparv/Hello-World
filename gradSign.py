@@ -22,6 +22,7 @@ with open(csvFileName, 'r') as csvfile:
 
             #validate if order # for this row & previous row matches
             orderNo = row['Order #'].strip()
+            orderDate = row['Date'].strip()
 
             #Check for delivery notes
             prodOptions = row['Product Options']
@@ -39,7 +40,7 @@ with open(csvFileName, 'r') as csvfile:
             city = prevRow['Shipping City'].strip()
 
             if(prodId == '29') : #Product id 29 is for Grad Signs
-                print('\"',orderNo,'\",\"',prodId,'\",\"',prodQty,'\",\"', fullName,'\",\"' ,email, '\",\"',address,'\",\"', city,'\",\"',phoneNo,'\",\"',notes.strip(),'\"')
+                print('\"',orderNo,'\",\"',orderDate,'\",\"',prodId,'\",\"',prodQty,'\",\"', fullName,'\",\"' ,email, '\",\"',address,'\",\"', city,'\",\"',phoneNo,'\",\"',notes.strip(),'\"')
         else :
             if rowCount % 2 == 0 : #if order numbers for 2nd row does not match the prev row, stop and print error
                 print("CSV Error, Order # does not match", row)
