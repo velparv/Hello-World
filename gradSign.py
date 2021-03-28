@@ -10,42 +10,57 @@ def phoneFormat(phone_number):
     return fpn
 
 csvFileName = sys.argv[1] #weebly export csv taken as argument
-
+ordersMap = {}
+on =  ''
 with open(csvFileName, 'r') as csvfile: 
     csvreader = csv.DictReader(csvfile) 
-      
-    prevRow = {}
-    rowCount = 0
+    prevOrderNo = ''
     for row in csvreader: 
+        orderNo = row['Order #'].strip()
+        if not (orderNo in ordersMap) : #if order does not 
+            ordersMap[orderNo] = []
+        orderList = ordersMap[orderNo]
+        orderList.append(row)
 
-        rowCount += 1
-        #An order has 2 rows, read both rows (1st row has most details, 2nd row has delivery notes in 'Prod Options')
-        if rowCount > 1 and prevRow['Order #'] == row['Order #'] : #if prevRow has been parsed
+    #for orderNo, orderList in ordersMap.items() :
+    #    print(len(orderList))
 
-            #validate if order # for this row & previous row matches
-            orderNo = row['Order #'].strip()
-            orderDate = row['Date'].strip()
+    #print(len(ordersMap))
+    with open("out.csv", "w") as csvOut:
 
-            #Check for delivery notes
-            prodOptions = row['Product Options']
-            notes = ''
-            index = prodOptions.find('Delivery Notes')
-            if index > 0 : #if word 'Delivery Notes' found in Product Options 
-                notes = prodOptions[index + len('Delivery Notes'):].replace(':','').replace('\n',';').replace('\r',';')
-
-            prodId = row['Product Id'].strip()
-            phoneNo = phoneFormat(prevRow['Shipping Phone'])
-            fullName = prevRow['Shipping First Name'].strip() + ' ' +  prevRow['Shipping Last Name'].strip() #combine First & Last Name
-            prodQty = row['Product Quantity'].strip()
-            email = prevRow['Shipping Email'].strip()
-            address = prevRow['Shipping Address'].strip()
-            city = prevRow['Shipping City'].strip().capitalize()
-
-            if(prodId == '29') : #Product id 29 is for Grad Signs
-                print('\"',orderNo,'\",\"',orderDate,'\",\"',prodId,'\",\"',prodQty,'\",\"', fullName,'\",\"' ,email, '\",\"',address,'\",\"', city,'\",\"',phoneNo,'\",\"',notes.strip(),'\"')
-        else :
-            if rowCount % 2 == 0 : #if order numbers for 2nd row does not match the prev row, stop and print error
-                print("CSV Error, Order # does not match", row)
-                break
-            else :
-                prevRow = row
+        for orderNo, orderList in ordersMap.items() :
+            orderDate = phoneNo = fullName = prodQty = email = address = city = notes = ''
+            mainPhoneNo = mainFullName= mainEmail = mainAddress = mainCity =''
+            gradOrderFound = False
+            for orderLineNo, orderLine in enumerate(orderList) :
+                prodId = orderLine['Product Id'].strip()
+                if prodId == '' :
+                    mainPhoneNo = phoneFormat(orderLine['Shipping Phone'])
+                    mainFullName = orderLine['Shipping First Name'].strip() + ' ' +  orderLine['Shipping Last Name'].strip() #combine First & Last Name
+                    mainEmail = orderLine['Shipping Email'].strip()
+                    mainAddress = orderLine['Shipping Address'].strip()
+                    mainCity = orderLine['Shipping City'].strip().capitalize()
+                elif prodId == '29' :
+                    gradOrderFound = True
+                    prodQty = orderLine['Product Quantity'].strip()
+                    orderDate = orderLine['Date'].strip()
+                    #Check for delivery notes
+                    prodOptions = orderLine['Product Options']
+                    index = prodOptions.find('Delivery Notes')
+                    if index > 0 : #if word 'Delivery Notes' found in Product Options 
+                        notes = prodOptions[index + len('Delivery Notes'):].replace(':','').replace('\n',';').replace('\r',';')
+    
+                    index = prodOptions.find('Delivery Street Address - ')
+                    if index >= 0 : #if word 'Delivery Notes' found in Product Options 
+                        s1 = prodOptions.replace('Delivery Street Address - ','')
+                        index = s1.find(', Buyer Name')
+                        s2 = s1[:index]
+                        addressParts = s2.split(":")
+                        address = addressParts[1].strip()
+                        cityZip = addressParts[0].split(',')
+                        city  = cityZip[0].strip()
+    
+            if gradOrderFound :
+                if address.lower() != mainAddress.lower() or city.lower() != mainCity.lower() :
+                    print(f"@@@@@@@@@  Address in Product does not match the main Address [{address},{city}] [{mainAddress},{mainCity}]  @@@@@@@@@@@@@@")
+                print('\"',orderNo,'\",\"',orderDate,'\",\"',prodId,'\",\"',prodQty,'\",\"', mainFullName,'\",\"' ,mainEmail, '\",\"',mainAddress,'\",\"', city,'\",\"',mainPhoneNo,'\",\"',notes.strip(),'\"',file=csvOut)
